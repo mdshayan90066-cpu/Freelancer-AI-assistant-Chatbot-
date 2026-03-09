@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clients — FreelanceAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/pages.css">
+</head>
+
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><span class="logo-icon">⚡</span><span class="logo-text">FreelanceAI</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/" class="nav-link"><span class="nav-icon">📊</span> Dashboard</a>
+            <a href="/chat" class="nav-link"><span class="nav-icon">💬</span> AI Chat</a>
+            <a href="/clients" class="nav-link active"><span class="nav-icon">👥</span> Clients</a>
+            <a href="/payments" class="nav-link"><span class="nav-icon">💰</span> Payments</a>
+            <a href="/invoices" class="nav-link"><span class="nav-icon">📋</span> Invoices</a>
+            <a href="/receipts" class="nav-link"><span class="nav-icon">🧾</span> Receipts</a>
+        </nav>
+        <div class="sidebar-footer" style="padding: 20px; border-top: 1px solid var(--border-color); margin-top: auto;">
+            <button onclick="handleLogout()" class="btn-sm"
+                style="width: 100%; background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); cursor: pointer; padding: 10px; border-radius: 8px;">
+                🚪 Logout
+            </button>
+        </div>
+    </aside>
+    <main class="page-content">
+        <header class="page-header">
+            <button class="menu-toggle"
+                onclick="document.getElementById('sidebar').classList.toggle('collapsed')">☰</button>
+            <h1>Client Management</h1>
+            <button class="btn-primary" onclick="openClientModal()">+ Add Client</button>
+        </header>
+        <div class="page-body">
+            <div class="card">
+                <div class="card-header">
+                    <h2>All Clients (<span id="client-count">0</span>)</h2>
+                    <input type="text" class="search-input" id="client-search" placeholder="Search clients..."
+                        oninput="filterClients()">
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table" id="clients-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Company</th>
+                                <th>Due Amount</th>
+                                <th>Added</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clients-body">
+                            <tr>
+                                <td colspan="7" class="empty-row">No clients yet</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add/Edit Client Modal -->
+    <div class="modal-overlay" id="client-modal" onclick="closeClientModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 id="client-modal-title">Add Client</h2>
+                <button class="modal-close" onclick="closeClientModal()">✕</button>
+            </div>
+            <form id="client-form" onsubmit="saveClient(event)">
+                <input type="hidden" id="edit-id" value="">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Name *</label>
+                        <input type="text" id="f-name" required placeholder="John Doe">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="f-email" placeholder="john@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="text" id="f-phone" placeholder="+1 234 567 8900">
+                    </div>
+                    <div class="form-group">
+                        <label>Company</label>
+                        <input type="text" id="f-company" placeholder="Acme Inc.">
+                    </div>
+                    <div class="form-group">
+                        <label>Due Amount ($)</label>
+                        <input type="number" step="0.01" id="f-due" placeholder="0.00" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Address</label>
+                        <input type="text" id="f-address" placeholder="123 Main St, City">
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Notes</label>
+                        <textarea id="f-notes" rows="2" placeholder="Any additional notes..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeClientModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Client</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Client Details Modal -->
+    <div class="modal-overlay" id="details-modal" onclick="closeDetailsModal()">
+        <div class="modal modal-wide" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 id="details-client-name">Client Details</h2>
+                <button class="modal-close" onclick="closeDetailsModal()">✕</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <div class="details-section">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3>Projects</h3>
+                        <button class="btn-sm btn-primary" onclick="openProjectModal()">+ New Project</button>
+                    </div>
+                    <div id="projects-list" class="projects-container">
+                        <!-- Projects will be loaded here -->
+                        <p class="empty-msg">No projects found.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Modal -->
+    <div class="modal-overlay" id="project-modal" onclick="closeProjectModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>Add New Project</h2>
+                <button class="modal-close" onclick="closeProjectModal()">✕</button>
+            </div>
+            <form id="project-form" onsubmit="saveProject(event)">
+                <div class="form-group">
+                    <label>Project Name *</label>
+                    <input type="text" id="p-name" required placeholder="Website Redesign">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="p-desc" rows="3" placeholder="Briefly describe the project..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeProjectModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        .modal-wide {
+            width: 600px;
+        }
+
+        .email-field {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-glass);
+            background: var(--bg-glass);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.88rem;
+            outline: none;
+            transition: var(--transition);
+            resize: vertical;
+        }
+
+        .email-field:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .due-cell {
+            color: #fbbf24 !important;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .due-cell.zero {
+            color: var(--success) !important;
+        }
+
+        .project-card {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .project-title {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .project-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .mini-table {
+            width: 100%;
+            font-size: 0.8rem;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .mini-table th {
+            text-align: left;
+            padding: 5px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        .mini-table td {
+            padding: 5px;
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        .empty-msg {
+            color: var(--text-muted);
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+
+    <script>
+        let allClients = [];
+
+        async function loadClients() {
+            const res = await fetch('/api/clients');
+            allClients = await res.json();
+            renderClients(allClients);
+        }
+
+        function renderClients(clients) {
+            document.getElementById('client-count').textContent = clients.length;
+            const tbody = document.getElementById('clients-body');
+            if (clients.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-row">No clients yet. Click "+ Add Client" to begin.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = clients.map(c => {
+                const due = parseFloat(c.due_amount || 0);
+                const dueClass = due > 0 ? 'due-cell' : 'due-cell zero';
+                const hasEmail = c.email && c.email.length > 0;
+                const emailBtn = hasEmail
+                    ? `<button class="btn-sm btn-blue" onclick="draftEmail(${c.id})" title="AI Draft & Send Email">📧</button>`
+                    : `<button class="btn-sm" disabled title="No email address" style="opacity:0.3">📧</button>`;
+                return `
+                    <tr>
+                        <td><strong>${c.name}</strong></td>
+                        <td>${c.email || '—'}</td>
+                        <td>${c.phone || '—'}</td>
+                        <td>${c.company || '—'}</td>
+                        <td class="${dueClass}">$${due.toFixed(2)}</td>
+                        <td>${c.created_at ? new Date(c.created_at).toLocaleDateString() : '—'}</td>
+                        <td class="actions-cell">
+                            <button class="btn-sm" onclick="viewClientDetails(${c.id}, '${c.name.replace(/'/g, "\\'")}')" title="View Projects">👁️ View</button>
+                            ${emailBtn}
+                            <button class="btn-icon btn-edit" onclick="editClient(${c.id})" title="Edit">✏️</button>
+                            <button class="btn-icon btn-delete" onclick="deleteClient(${c.id}, '${c.name.replace(/'/g, "\\'")}')" title="Delete">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterClients() {
+            const q = document.getElementById('client-search').value.toLowerCase();
+            const filtered = allClients.filter(c =>
+                (c.name || '').toLowerCase().includes(q) ||
+                (c.email || '').toLowerCase().includes(q) ||
+                (c.company || '').toLowerCase().includes(q)
+            );
+            renderClients(filtered);
+        }
+
+        // ─── Client Modal ───
+        function openClientModal(isEdit = false) {
+            document.getElementById('client-modal').classList.add('show');
+            document.getElementById('client-modal-title').textContent = isEdit ? 'Edit Client' : 'Add Client';
+            if (!isEdit) {
+                document.getElementById('client-form').reset();
+                document.getElementById('edit-id').value = '';
+            }
+        }
+
+        function closeClientModal() {
+            document.getElementById('client-modal').classList.remove('show');
+        }
+
+        function editClient(id) {
+            const c = allClients.find(x => x.id === id);
+            if (!c) return;
+            document.getElementById('edit-id').value = id;
+            document.getElementById('f-name').value = c.name || '';
+            document.getElementById('f-email').value = c.email || '';
+            document.getElementById('f-phone').value = c.phone || '';
+            document.getElementById('f-company').value = c.company || '';
+            document.getElementById('f-due').value = c.due_amount || 0;
+            document.getElementById('f-address').value = c.address || '';
+            document.getElementById('f-notes').value = c.notes || '';
+            openClientModal(true);
+        }
+
+        async function saveClient(e) {
+            e.preventDefault();
+            const editId = document.getElementById('edit-id').value;
+            const payload = {
+                name: document.getElementById('f-name').value,
+                email: document.getElementById('f-email').value || null,
+                phone: document.getElementById('f-phone').value || null,
+                company: document.getElementById('f-company').value || null,
+                address: document.getElementById('f-address').value || null,
+                notes: document.getElementById('f-notes').value || null,
+                due_amount: parseFloat(document.getElementById('f-due').value) || 0,
+            };
+            if (editId) {
+                await fetch(`/api/clients/${editId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            } else {
+                await fetch('/api/clients', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            }
+            closeClientModal();
+            loadClients();
+        }
+
+        async function deleteClient(id, name) {
+            if (!confirm(`Delete client "${name}"? This cannot be undone.`)) return;
+            await fetch(`/api/clients/${id}`, { method: 'DELETE' });
+            loadClients();
+        }
+
+        // ─── Email Draft & Send ───
+        async function draftEmail(clientId) {
+            const modal = document.getElementById('email-modal');
+            const loading = document.getElementById('email-loading');
+            const content = document.getElementById('email-content');
+            const success = document.getElementById('email-sent-success');
+
+            modal.classList.add('show');
+            loading.style.display = 'block';
+            content.style.display = 'none';
+            success.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/draft-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ client_id: clientId, email_type: 'payment_reminder' })
+                });
+                const data = await res.json();
+
+                if (!data.success) {
+                    alert('Error drafting email: ' + (data.error || 'Unknown'));
+                    closeEmailModal();
+                    return;
+                }
+
+                document.getElementById('email-to').value = data.to_email || '';
+                document.getElementById('email-subject').value = data.subject || '';
+                document.getElementById('email-body').value = data.body || '';
+                document.getElementById('email-client-badge').textContent = `👤 ${data.client_name}`;
+                document.getElementById('email-due-badge').textContent = `💰 Due: $${(data.due_amount || 0).toFixed(2)}`;
+
+                loading.style.display = 'none';
+                content.style.display = 'block';
+            } catch (err) {
+                alert('Failed to draft email: ' + err.message);
+                closeEmailModal();
+            }
+        }
+
+        async function sendDraftedEmail() {
+            const btn = document.getElementById('btn-send-email');
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+
+            const payload = {
+                to_email: document.getElementById('email-to').value,
+                subject: document.getElementById('email-subject').value,
+                body: document.getElementById('email-body').value,
+            };
+
+            try {
+                const res = await fetch('/api/send-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    document.getElementById('email-content').style.display = 'none';
+                    document.getElementById('email-sent-success').style.display = 'block';
+                    document.getElementById('email-sent-msg').textContent = `Email sent to ${payload.to_email}`;
+                } else {
+                    alert('Failed to send: ' + (data.error || 'Unknown error'));
+                }
+            } catch (err) {
+                alert('Send failed: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📧 Send Email';
+            }
+        }
+
+        function closeEmailModal() {
+            document.getElementById('email-modal').classList.remove('show');
+        }
+
+        loadClients();
+
+        let currentClientId = null;
+
+        async function viewClientDetails(id, name) {
+            currentClientId = id;
+            document.getElementById('details-client-name').textContent = `Details: ${name}`;
+            document.getElementById('details-modal').classList.add('show');
+            loadProjects();
+        }
+
+        function closeDetailsModal() {
+            document.getElementById('details-modal').classList.remove('show');
+            currentClientId = null;
+        }
+
+        async function loadProjects() {
+            if (!currentClientId) return;
+            const res = await fetch(`/api/clients/${currentClientId}/projects`);
+            const projects = await res.json();
+            const container = document.getElementById('projects-list');
+
+            if (projects.length === 0) {
+                container.innerHTML = '<p class="empty-msg">No projects found. Click "+ New Project" to begin.</p>';
+                return;
+            }
+
+            container.innerHTML = (await Promise.all(projects.map(async p => {
+                const [invRes, recRes] = await Promise.all([
+                    fetch(`/api/projects/${p.id}/invoices`),
+                    fetch(`/api/projects/${p.id}/receipts`)
+                ]);
+                const invoices = await invRes.json();
+                const receipts = await recRes.json();
+
+                const invRows = invoices.length > 0
+                    ? invoices.map(i => `<tr><td>${i.invoice_number}</td><td>$${i.total_amount.toFixed(2)}</td><td><span class="badge ${i.status === 'paid' ? 'badge-green' : 'badge-orange'}">${i.status}</span></td></tr>`).join('')
+                    : '<tr><td colspan="3" class="empty-msg">No invoices</td></tr>';
+
+                return `
+                    <div class="project-card">
+                        <div class="project-header">
+                            <div>
+                                <span class="project-title">${p.name}</span>
+                                <span class="badge badge-blue" style="margin-left: 10px;">${p.status}</span>
+                            </div>
+                            <div class="project-actions">
+                                <button class="btn-sm btn-blue" onclick="promptEmail(${p.id})">📧 Email</button>
+                                <button class="btn-sm btn-green" onclick="generateInvoiceForProject(${p.id})">🧾 Invoice</button>
+                                <button class="btn-sm" style="background: var(--error);" onclick="deleteProject(${p.id})">🗑️</button>
+                            </div>
+                        </div>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 5px 0;">${p.description || 'No description'}</p>
+                        <table class="mini-table">
+                            <thead><tr><th>Invoice #</th><th>Amount</th><th>Status</th></tr></thead>
+                            <tbody>${invRows}</tbody>
+                        </table>
+                    </div>
+                `;
+            }))).join('');
+        }
+
+        function openProjectModal() {
+            document.getElementById('project-modal').classList.add('show');
+        }
+
+        function closeProjectModal() {
+            document.getElementById('project-modal').classList.remove('show');
+            document.getElementById('project-form').reset();
+        }
+
+        async function saveProject(e) {
+            e.preventDefault();
+            const payload = {
+                client_id: currentClientId,
+                name: document.getElementById('p-name').value,
+                description: document.getElementById('p-desc').value
+            };
+            const res = await fetch('/api/projects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                closeProjectModal();
+                loadProjects();
+            }
+        }
+
+        async function deleteProject(id) {
+            if (!confirm('Delete this project?')) return;
+            await fetch(`/api/projects/${id}`, { method: 'DELETE' });
+            loadProjects();
+        }
+
+        async function generateInvoiceForProject(pid) {
+            alert('Triggering AI Chat for invoice generation with project link...');
+            // In a real app, this would pre-fill the chat or open the chat with a specific command.
+            window.location.href = `/chat?project_id=${pid}&action=invoice`;
+        }
+
+        async function promptEmail(pid) {
+            window.location.href = `/chat?project_id=${pid}&action=email`;
+        }
+
+        async function handleLogout() {
+            try {
+                const response = await fetch('/api/logout', { method: 'POST' });
+                if (response.ok) {
+                    window.location.href = '/login';
+                } else {
+                    alert('Logout failed');
+                }
+            } catch (err) {
+                console.error('Logout error:', err);
+            }
+        }
+    </script>
+</body>
+
+</html>

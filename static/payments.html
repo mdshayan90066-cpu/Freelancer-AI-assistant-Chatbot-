@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pending Payments — FreelanceAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/pages.css">
+</head>
+
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><span class="logo-icon">⚡</span><span class="logo-text">FreelanceAI</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/" class="nav-link"><span class="nav-icon">📊</span> Dashboard</a>
+            <a href="/chat" class="nav-link"><span class="nav-icon">💬</span> AI Chat</a>
+            <a href="/clients" class="nav-link"><span class="nav-icon">👥</span> Clients</a>
+            <a href="/payments" class="nav-link active"><span class="nav-icon">💰</span> Payments</a>
+            <a href="/invoices" class="nav-link"><span class="nav-icon">📋</span> Invoices</a>
+            <a href="/receipts" class="nav-link"><span class="nav-icon">🧾</span> Receipts</a>
+        </nav>
+        <div class="sidebar-footer" style="padding: 20px; border-top: 1px solid var(--border-color); margin-top: auto;">
+            <button onclick="handleLogout()" class="btn-sm"
+                style="width: 100%; background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); cursor: pointer; padding: 10px; border-radius: 8px;">
+                🚪 Logout
+            </button>
+        </div>
+    </aside>
+    <main class="page-content">
+        <header class="page-header">
+            <button class="menu-toggle"
+                onclick="document.getElementById('sidebar').classList.toggle('collapsed')">☰</button>
+            <h1>Pending Payments</h1>
+        </header>
+        <div class="page-body">
+            <div class="stats-grid stats-grid-2">
+                <div class="stat-card stat-orange">
+                    <div class="stat-icon">⏳</div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="outstanding-total">$0</span>
+                        <span class="stat-label">Total Outstanding</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-purple">
+                    <div class="stat-icon">📋</div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="unpaid-count">0</span>
+                        <span class="stat-label">Unpaid Invoices</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h2>Unpaid Invoices</h2>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Invoice #</th>
+                                <th>Client</th>
+                                <th>Project</th>
+                                <th>Amount</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="payments-body">
+                            <tr>
+                                <td colspan="6" class="empty-row">No pending payments 🎉</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script>
+        async function loadPayments() {
+            try {
+                const [statsRes, invRes] = await Promise.all([
+                    fetch('/api/stats'), fetch('/api/invoices?status=unpaid')
+                ]);
+                const stats = await statsRes.json();
+                const invoices = await invRes.json();
+
+                document.getElementById('outstanding-total').textContent = `$${(stats.outstanding_revenue || 0).toFixed(2)}`;
+                document.getElementById('unpaid-count').textContent = stats.unpaid_invoices || 0;
+
+                const tbody = document.getElementById('payments-body');
+                if (invoices.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="empty-row">No pending payments 🎉</td></tr>';
+                } else {
+                    tbody.innerHTML = invoices.map(inv => `
+                        <tr>
+                            <td><strong>${inv.invoice_number || 'N/A'}</strong></td>
+                            <td>${inv.client_name || '—'}</td>
+                            <td>${inv.project_name || '—'}</td>
+                            <td class="amount-cell">$${(inv.total_amount || 0).toFixed(2)}</td>
+                            <td>${inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '—'}</td>
+                            <td><button class="btn-sm btn-green" onclick="markPaid(${inv.id})">✅ Mark Paid</button></td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function markPaid(id) {
+            if (!confirm('Mark this invoice as paid?')) return;
+            await fetch(`/api/invoices/${id}/paid`, { method: 'PUT' });
+            loadPayments();
+        }
+
+        loadPayments();
+
+        async function handleLogout() {
+            try {
+                const response = await fetch('/api/logout', { method: 'POST' });
+                if (response.ok) {
+                    window.location.href = '/login';
+                } else {
+                    alert('Logout failed');
+                }
+            } catch (err) {
+                console.error('Logout error:', err);
+            }
+        }
+    </script>
+</body>
+
+</html>

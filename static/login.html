@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login &mdash; FreelanceAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: var(--bg-primary);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .auth-card {
+            background: var(--bg-secondary);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            border: 1px solid var(--border-glass);
+        }
+
+        .auth-logo {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .auth-subtitle {
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-glass);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        .btn-auth {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn-auth:hover {
+            background: var(--accent-secondary);
+        }
+
+        .auth-links {
+            margin-top: 25px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .auth-links a {
+            color: var(--accent-primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .auth-links a:hover {
+            text-decoration: underline;
+        }
+
+        .error-msg {
+            color: var(--error);
+            font-size: 0.85rem;
+            margin-top: -10px;
+            margin-bottom: 15px;
+            display: none;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="auth-card">
+        <div class="auth-logo"><span class="logo-icon">⚡</span> FreelanceAI</div>
+        <div class="auth-subtitle">Welcome back. Please login to continue.</div>
+
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" class="form-control" required placeholder="you@example.com">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" class="form-control" required placeholder="••••••••">
+            </div>
+
+            <div id="error-message" class="error-msg"></div>
+
+            <button type="submit" class="btn-auth" id="submitBtn">Sign In</button>
+        </form>
+
+        <div class="auth-links">
+            Don't have an account? <a href="/register">Register here</a>
+        </div>
+    </div>
+
+    <script>
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('error-message');
+            const submitBtn = document.getElementById('submitBtn');
+
+            errorMsg.style.display = 'none';
+            submitBtn.textContent = 'Signing in...';
+            submitBtn.disabled = true;
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    window.location.href = '/';
+                } else {
+                    errorMsg.textContent = data.detail || 'Invalid email or password';
+                    errorMsg.style.display = 'block';
+                    submitBtn.textContent = 'Sign In';
+                    submitBtn.disabled = false;
+                }
+            } catch (err) {
+                errorMsg.textContent = 'Network error. Please try again.';
+                errorMsg.style.display = 'block';
+                submitBtn.textContent = 'Sign In';
+                submitBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+
+</html>

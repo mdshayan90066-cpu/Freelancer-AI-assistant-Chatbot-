@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat — FreelanceAI</title>
+    <meta name="description"
+        content="AI-powered freelancer admin assistant for proposals, invoices, contracts, and payment reminders.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/pages.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">FreelanceAI</span>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/" class="nav-link"><span class="nav-icon">📊</span> Dashboard</a>
+            <a href="/chat" class="nav-link active"><span class="nav-icon">💬</span> AI Chat</a>
+            <a href="/clients" class="nav-link"><span class="nav-icon">👥</span> Clients</a>
+            <a href="/payments" class="nav-link"><span class="nav-icon">💰</span> Payments</a>
+            <a href="/invoices" class="nav-link"><span class="nav-icon">📋</span> Invoices</a>
+            <a href="/receipts" class="nav-link"><span class="nav-icon">🧾</span> Receipts</a>
+        </nav>
+        <div class="sidebar-metrics">
+            <h3 class="metrics-title">Quick Stats</h3>
+            <div class="metric-card" id="metric-revenue">
+                <div class="metric-icon">💰</div>
+                <div class="metric-info">
+                    <span class="metric-value" id="outstanding-revenue">$0.00</span>
+                    <span class="metric-label">Outstanding Revenue</span>
+                </div>
+            </div>
+            <div class="metric-card" id="metric-invoices">
+                <div class="metric-icon">📋</div>
+                <div class="metric-info">
+                    <span class="metric-value" id="unpaid-invoices">0</span>
+                    <span class="metric-label">Unpaid Invoices</span>
+                </div>
+            </div>
+            <div class="metric-card" id="metric-projects">
+                <div class="metric-icon">🚀</div>
+                <div class="metric-info">
+                    <span class="metric-value" id="active-projects">0</span>
+                    <span class="metric-label">Active Projects</span>
+                </div>
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            <div class="quick-actions">
+                <h4>Quick Actions</h4>
+                <button class="quick-btn" onclick="quickAction('Create a proposal')">📄 New Proposal</button>
+                <button class="quick-btn" onclick="quickAction('Generate an invoice')">🧾 New Invoice</button>
+                <button class="quick-btn" onclick="quickAction('Create a contract')">📋 New Contract</button>
+                <button class="quick-btn" onclick="quickAction('Send a payment reminder')">📧 Send Reminder</button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <main class="main-content">
+        <header class="chat-header">
+            <div class="header-left">
+                <button class="menu-toggle" id="menu-toggle" onclick="toggleSidebar()">☰</button>
+                <h1>Freelancer Assistant</h1>
+                <span class="status-badge">● Online</span>
+            </div>
+        </header>
+
+        <div class="chat-container" id="chat-container">
+            <div class="welcome-message">
+                <div class="welcome-icon">🤖</div>
+                <h2>Welcome to FreelanceAI</h2>
+                <p>I can help you create <strong>proposals</strong>, generate <strong>invoices</strong>, draft
+                    <strong>contracts</strong>, and send <strong>payment reminders</strong>. Just tell me what you need!
+                </p>
+                <div class="welcome-chips">
+                    <button class="chip"
+                        onclick="quickAction('I need to create a proposal for a web development project')">📄 Create a
+                        Proposal</button>
+                    <button class="chip"
+                        onclick="quickAction('Generate an invoice for 20 hours of design work at $100/hr')">🧾 Generate
+                        Invoice</button>
+                    <button class="chip" onclick="quickAction('Create a contract for a mobile app project')">📋 Draft
+                        Contract</button>
+                    <button class="chip" onclick="quickAction('Send a payment reminder for overdue invoice')">📧 Payment
+                        Reminder</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="input-wrapper">
+                <button id="voice-btn" onclick="toggleVoiceInput()" class="voice-btn" title="Hold or click to speak">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="22"></line>
+                        <line x1="8" y1="22" x2="16" y2="22"></line>
+                    </svg>
+                </button>
+                <textarea id="user-input" placeholder="Type or speak your message..." rows="1"
+                    onkeydown="handleKeyDown(event)"></textarea>
+                <button id="send-btn" onclick="sendMessage()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script src="/static/app.js"></script>
+    <script>
+        async function handleLogout() {
+            try {
+                const response = await fetch('/api/logout', { method: 'POST' });
+                if (response.ok) {
+                    window.location.href = '/login';
+                } else {
+                    alert('Logout failed');
+                }
+            } catch (err) {
+                console.error('Logout error:', err);
+            }
+        }
+    </script>
+</body>
+
+</html>

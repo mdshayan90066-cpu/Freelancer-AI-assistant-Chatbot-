@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register &mdash; FreelanceAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: var(--bg-primary);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .auth-card {
+            background: var(--bg-secondary);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            border: 1px solid var(--border-glass);
+        }
+
+        .auth-logo {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .auth-subtitle {
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-glass);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        .btn-auth {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn-auth:hover {
+            background: var(--accent-secondary);
+        }
+
+        .auth-links {
+            margin-top: 25px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .auth-links a {
+            color: var(--accent-primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .auth-links a:hover {
+            text-decoration: underline;
+        }
+
+        .error-msg {
+            color: var(--error);
+            font-size: 0.85rem;
+            margin-top: -10px;
+            margin-bottom: 15px;
+            display: none;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="auth-card">
+        <div class="auth-logo"><span class="logo-icon">⚡</span> FreelanceAI</div>
+        <div class="auth-subtitle">Create an account to manage your freelance business.</div>
+
+        <form id="registerForm" onsubmit="handleRegister(event)">
+
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                <input type="text" id="name" class="form-control" required placeholder="John Doe">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" class="form-control" required placeholder="you@example.com">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" class="form-control" required placeholder="••••••••"
+                        minlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password</label>
+                    <input type="password" id="confirm_password" class="form-control" required placeholder="••••••••"
+                        minlength="6">
+                </div>
+            </div>
+
+            <div id="error-message" class="error-msg"></div>
+
+            <button type="submit" class="btn-auth" id="submitBtn">Create Account</button>
+        </form>
+
+        <div class="auth-links">
+            Already have an account? <a href="/login">Sign in</a>
+        </div>
+    </div>
+
+    <script>
+        async function handleRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            const errorMsg = document.getElementById('error-message');
+            const submitBtn = document.getElementById('submitBtn');
+
+            errorMsg.style.display = 'none';
+
+            if (password !== confirmPassword) {
+                errorMsg.textContent = 'Passwords do not match';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            submitBtn.textContent = 'Creating account...';
+            submitBtn.disabled = true;
+
+            try {
+                const res = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    window.location.href = '/';
+                } else {
+                    errorMsg.textContent = data.detail || 'Registration failed';
+                    errorMsg.style.display = 'block';
+                    submitBtn.textContent = 'Create Account';
+                    submitBtn.disabled = false;
+                }
+            } catch (err) {
+                errorMsg.textContent = 'Network error. Please try again.';
+                errorMsg.style.display = 'block';
+                submitBtn.textContent = 'Create Account';
+                submitBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+
+</html>

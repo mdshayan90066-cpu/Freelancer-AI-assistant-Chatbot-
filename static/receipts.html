@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipts — FreelanceAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/pages.css">
+</head>
+
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><span class="logo-icon">⚡</span><span class="logo-text">FreelanceAI</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/" class="nav-link"><span class="nav-icon">📊</span> Dashboard</a>
+            <a href="/chat" class="nav-link"><span class="nav-icon">💬</span> AI Chat</a>
+            <a href="/clients" class="nav-link"><span class="nav-icon">👥</span> Clients</a>
+            <a href="/payments" class="nav-link"><span class="nav-icon">💰</span> Payments</a>
+            <a href="/invoices" class="nav-link"><span class="nav-icon">📋</span> Invoices</a>
+            <a href="/receipts" class="nav-link active"><span class="nav-icon">🧾</span> Receipts</a>
+        </nav>
+        <div class="sidebar-footer" style="padding: 20px; border-top: 1px solid var(--border-color); margin-top: auto;">
+            <button onclick="handleLogout()" class="btn-sm"
+                style="width: 100%; background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); cursor: pointer; padding: 10px; border-radius: 8px;">
+                🚪 Logout
+            </button>
+        </div>
+    </aside>
+    <main class="page-content">
+        <header class="page-header">
+            <button class="menu-toggle"
+                onclick="document.getElementById('sidebar').classList.toggle('collapsed')">☰</button>
+            <h1>Receipts</h1>
+        </header>
+
+        <div class="page-body">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Generated Receipts (<span id="receipt-count">0</span>)</h2>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table" id="receipts-table">
+                        <thead>
+                            <tr>
+                                <th>Receipt #</th>
+                                <th>Client</th>
+                                <th>Project</th>
+                                <th>Amount Paid</th>
+                                <th>Payment Method</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="receipts-body">
+                            <tr>
+                                <td colspan="7" class="empty-row">No receipts found. Generate one via AI Chat!</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        async function loadReceipts() {
+            try {
+                const res = await fetch('/api/receipts');
+                if (!res.ok) throw new Error('Failed to fetch');
+                const receipts = await res.json();
+
+                document.getElementById('receipt-count').textContent = receipts.length;
+                const tbody = document.getElementById('receipts-body');
+
+                if (receipts.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="empty-row">No receipts found. Generate one via AI Chat!</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = receipts.map(r => `
+                    <tr>
+                        <td><strong>${r.receipt_number}</strong></td>
+                        <td>${r.client_name}</td>
+                        <td>${r.project_name || '—'}</td>
+                        <td style="color:var(--success); font-weight:600;">$${parseFloat(r.amount_paid).toFixed(2)}</td>
+                        <td><span class="badge badge-blue">${r.payment_method || 'Transfer'}</span></td>
+                        <td>${r.receipt_date || new Date(r.created_at).toLocaleDateString()}</td>
+                        <td class="actions-cell">
+                            <a href="/download/${r.file_path.split('/').pop()}" target="_blank" class="btn-sm btn-primary" title="Download PDF">📥 PDF</a>
+                            <button onclick="deleteReceipt(${r.id})" class="btn-sm" style="background:var(--error); border:none; color:white; padding:5px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer;" title="Delete Receipt">🗑️</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                console.error(e);
+                document.getElementById('receipts-body').innerHTML = '<tr><td colspan="7" class="empty-row" style="color:var(--error);">Failed to load receipts.</td></tr>';
+            }
+        }
+
+        async function deleteReceipt(id) {
+            try {
+                const res = await fetch(`/api/receipts/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    loadReceipts();
+                } else {
+                    alert('Failed to delete receipt.');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Error deleting receipt.');
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.href = '/login';
+            } catch (e) {
+                console.error('Logout failed', e);
+            }
+        }
+
+        loadReceipts();
+    </script>
+</body>
+
+</html>
