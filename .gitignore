@@ -1,0 +1,10 @@
+.env
+API.txt
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+freelancer.db
